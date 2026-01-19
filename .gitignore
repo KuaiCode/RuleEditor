@@ -46,7 +46,7 @@ config/app_config.json
 
 # Rule files
 *.yml
-!.github/*.yml
+!.github/**/*.yml
 
 # Logs
 *.log
