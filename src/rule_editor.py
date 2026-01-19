@@ -149,7 +149,8 @@ class RuleEditPanel(QWidget):
         scroll_area.setStyleSheet("QScrollArea { background: transparent; border: none; }")
         
         scroll_widget = QWidget()
-        scroll_widget.setStyleSheet("QWidget { background: transparent; }")
+        scroll_widget.setObjectName("scrollWidget")
+        scroll_widget.setStyleSheet("#scrollWidget { background: transparent; }")
         scroll_layout = QVBoxLayout(scroll_widget)
         scroll_layout.setContentsMargins(0, 0, 0, 0)
         scroll_layout.setSpacing(16)
