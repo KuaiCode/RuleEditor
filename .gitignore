@@ -54,3 +54,7 @@ config/app_config.json
 # Temporary files
 *.tmp
 *.temp
+
+# PyInstaller
+*.spec
+!RuleEditor.spec
