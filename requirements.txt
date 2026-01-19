@@ -1,0 +1,6 @@
+PyQt6>=6.5.0
+PyQt6-QScintilla>=2.14.0
+PyYAML>=6.0
+watchdog>=3.0.0
+darkdetect>=0.8.0
+javalang>=0.13.0
