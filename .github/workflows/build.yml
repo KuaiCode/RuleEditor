@@ -28,12 +28,14 @@ jobs:
 
       - name: Build executable
         run: |
-        $iconArg = ""
-        if (Test-Path "assets/icon.ico") {
-          $iconArg = "--icon `"assets/icon.ico`""
-        }
-        $cmd = "pyinstaller --name `"RuleEditor`" --windowed --onefile $iconArg --noconfirm main.py"
-        Invoke-Expression $cmd
+          $iconArg = ""
+          if (Test-Path "assets/icon.ico") {
+            $iconArg = "--icon `"assets/icon.ico`""
+          }
+          $cmd = "pyinstaller --name `"RuleEditor`" --windowed --onefile $iconArg --noconfirm main.py"
+          Invoke-Expression $cmd
+        shell: pwsh
+
       - name: Create release package
         run: |
           mkdir release
