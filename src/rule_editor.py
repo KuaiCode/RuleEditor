@@ -202,14 +202,10 @@ class RuleEditPanel(QWidget):
         expr_layout.setSpacing(8)
         expr_layout.setContentsMargins(16, 16, 16, 16)
         
-        expr_hint = QLabel("使用 Spring Expression Language (SpEL) 编写规则条件，支持代码补全")
-        expr_hint.setStyleSheet("color: #666666; font-size: 9pt;")
-        expr_layout.addWidget(expr_hint)
-        
         self.expression_edit = SpelTextEdit(self, self.spel_completer)
-        self.expression_edit.setPlaceholderText('例如: baseInfo.idNumber == NULL')
-        self.expression_edit.setMinimumHeight(70)
-        self.expression_edit.setMaximumHeight(100)
+        self.expression_edit.setPlaceholderText('使用 SpEL 编写规则条件，例如: baseInfo.idNumber == NULL，支持代码补全 (Alt+/)')
+        self.expression_edit.setMinimumHeight(80)
+        self.expression_edit.setMaximumHeight(120)
         self.expression_edit.textChanged.connect(self._on_field_changed)
         expr_layout.addWidget(self.expression_edit)
         
@@ -221,14 +217,10 @@ class RuleEditPanel(QWidget):
         msg_layout.setSpacing(8)
         msg_layout.setContentsMargins(16, 16, 16, 16)
         
-        msg_hint = QLabel("支持使用 #{expression} 插入动态内容")
-        msg_hint.setStyleSheet("color: #666666; font-size: 9pt;")
-        msg_layout.addWidget(msg_hint)
-        
         self.message_edit = SpelTextEdit(self, self.spel_completer)
-        self.message_edit.setPlaceholderText('例如: 身份证号为空')
+        self.message_edit.setPlaceholderText('支持使用 #{expression} 插入动态内容，例如: #{hospitalizationInfo.stayDays}')
         self.message_edit.setMinimumHeight(60)
-        self.message_edit.setMaximumHeight(80)
+        self.message_edit.setMaximumHeight(100)
         self.message_edit.textChanged.connect(self._on_field_changed)
         msg_layout.addWidget(self.message_edit)
         
