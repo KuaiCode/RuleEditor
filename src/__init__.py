@@ -11,7 +11,7 @@ from .backup_manager import BackupManager
 from .rule_editor import RuleEditor
 from .main_window import MainWindow, create_main_window
 
-__version__ = "1.1"
+__version__ = "1.2"
 __all__ = [
     'Rule', 'RuleFile', 'Severity', 'JavaClass', 'SpringBootProject',
     'ConfigManager', 'ThemeManager', 'setup_app_style',
