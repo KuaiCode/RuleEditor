@@ -212,9 +212,11 @@ class RuleEditPanel(QWidget):
         
         self.expression_edit = SpelTextEdit(self, self.spel_completer)
         self.expression_edit.setPlaceholderText('使用 SpEL 编写规则条件，例如: baseInfo.idNumber == NULL，支持代码补全 (Alt+/)')
-        self.expression_edit.setMinimumHeight(80)
-        self.expression_edit.setMaximumHeight(120)
+        self.expression_edit.setMinimumHeight(50)
+        self.expression_edit.setMaximumHeight(80)
         self.expression_edit.textChanged.connect(self._on_field_changed)
+        # 设置文档边距实现内容居中效果
+        self.expression_edit.document().setDocumentMargin(8)
         expr_layout.addWidget(self.expression_edit)
         
         scroll_layout.addWidget(expr_group)
@@ -227,8 +229,9 @@ class RuleEditPanel(QWidget):
         
         self.message_edit = SpelTextEdit(self, self.spel_completer)
         self.message_edit.setPlaceholderText('支持使用 #{expression} 插入动态内容，例如: #{hospitalizationInfo.stayDays}')
-        self.message_edit.setMinimumHeight(60)
-        self.message_edit.setMaximumHeight(100)
+        self.message_edit.setMinimumHeight(40)
+        self.message_edit.setMaximumHeight(60)
+        self.message_edit.document().setDocumentMargin(8)
         self.message_edit.textChanged.connect(self._on_field_changed)
         msg_layout.addWidget(self.message_edit)
         
