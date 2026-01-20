@@ -207,3 +207,37 @@ class ConfigManager:
         suffix = self.get_function_classes_suffix()
         return [c for c in self.get_all_scanned_classes() 
                 if c.get('name', '').endswith(suffix) or c.get('is_function_class', False)]
+    
+    def get_export_config(self) -> Dict[str, Any]:
+        """获取可导出的配置（包含扫描结果）"""
+        export_data = {
+            "springboot_projects": self.get('springboot_projects', []),
+            "function_classes_suffix": self.get_function_classes_suffix(),
+            "scanned_classes": self.get('scanned_classes', {}),
+        }
+        return export_data
+    
+    def merge_config(self, imported_config: Dict[str, Any]):
+        """合并导入的配置"""
+        # 合并 SpringBoot 项目
+        if 'springboot_projects' in imported_config:
+            existing_projects = self.get('springboot_projects', [])
+            imported_projects = imported_config.get('springboot_projects', [])
+            
+            # 按路径去重，导入的覆盖已有的
+            project_map = {p.get('path'): p for p in existing_projects}
+            for proj in imported_projects:
+                project_map[proj.get('path')] = proj
+            
+            self.set('springboot_projects', list(project_map.values()))
+        
+        # 合并函数类后缀
+        if 'function_classes_suffix' in imported_config:
+            self.set('function_classes_suffix', imported_config['function_classes_suffix'])
+        
+        # 合并扫描的类
+        if 'scanned_classes' in imported_config:
+            existing_classes = self.get('scanned_classes', {})
+            imported_classes = imported_config.get('scanned_classes', {})
+            existing_classes.update(imported_classes)
+            self.set('scanned_classes', existing_classes)

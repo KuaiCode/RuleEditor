@@ -19,6 +19,7 @@ from .theme_manager import ThemeManager, setup_app_style
 from .rule_editor import RuleEditor
 from .backup_manager import BackupManager
 from .spel_completer import SpelCompleter
+from .update_checker import UpdateChecker, get_app_version, open_release_page
 from .dialogs import (
     VersionDialog, ProfileDialog, SpringBootScanDialog,
     BackupDialog, SettingsDialog
@@ -146,6 +147,16 @@ class MainWindow(QMainWindow):
         profile_action.triggered.connect(self._show_profile_dialog)
         tools_menu.addAction(profile_action)
         
+        import_config_action = QAction("导入配置(&I)...", self)
+        import_config_action.triggered.connect(self._import_config)
+        tools_menu.addAction(import_config_action)
+        
+        export_config_action = QAction("导出配置(&E)...", self)
+        export_config_action.triggered.connect(self._export_config)
+        tools_menu.addAction(export_config_action)
+        
+        tools_menu.addSeparator()
+        
         settings_action = QAction("设置(&O)...", self)
         settings_action.triggered.connect(self._show_settings_dialog)
         tools_menu.addAction(settings_action)
@@ -169,6 +180,12 @@ class MainWindow(QMainWindow):
         
         # 帮助菜单
         help_menu = menubar.addMenu("帮助(&H)")
+        
+        check_update_action = QAction("检查更新(&U)...", self)
+        check_update_action.triggered.connect(self._check_update)
+        help_menu.addAction(check_update_action)
+        
+        help_menu.addSeparator()
         
         about_action = QAction("关于(&A)", self)
         about_action.triggered.connect(self._show_about)
@@ -475,10 +492,11 @@ class MainWindow(QMainWindow):
     
     def _show_about(self):
         """显示关于对话框"""
+        version = get_app_version()
         QMessageBox.about(
             self, "关于规则编辑器",
-            "<h3>规则编辑器</h3>"
-            "<p>版本 1.0.0</p>"
+            f"<h3>规则编辑器</h3>"
+            f"<p>版本 {version}</p>"
             "<p>一个用于编辑结算规则的桌面应用程序。</p>"
             "<p>支持功能:</p>"
             "<ul>"
@@ -489,6 +507,87 @@ class MainWindow(QMainWindow):
             "<li>深浅色主题切换</li>"
             "</ul>"
         )
+    
+    def _check_update(self):
+        """检查更新"""
+        self.statusBar().showMessage("正在检查更新...")
+        
+        self._update_checker = UpdateChecker(self)
+        self._update_checker.update_available.connect(self._on_update_available)
+        self._update_checker.check_finished.connect(self._on_check_finished)
+        self._update_checker.start()
+    
+    def _on_update_available(self, latest_version: str, release_url: str):
+        """发现新版本"""
+        current_version = get_app_version()
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle("发现新版本")
+        msg_box.setText(f"发现新版本 v{latest_version}\n当前版本: v{current_version}\n\n是否前往下载页面？")
+        msg_box.setIcon(QMessageBox.Icon.Information)
+        
+        yes_btn = msg_box.addButton("前往下载", QMessageBox.ButtonRole.AcceptRole)
+        no_btn = msg_box.addButton("稍后再说", QMessageBox.ButtonRole.RejectRole)
+        msg_box.setDefaultButton(yes_btn)
+        
+        msg_box.exec()
+        
+        if msg_box.clickedButton() == yes_btn:
+            open_release_page(release_url)
+    
+    def _on_check_finished(self, has_update: bool, message: str):
+        """检查更新完成"""
+        self.statusBar().showMessage(message, 3000)
+        if not has_update and "失败" not in message:
+            QMessageBox.information(self, "检查更新", message)
+    
+    def _import_config(self):
+        """导入配置文件"""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "导入配置文件",
+            "",
+            "JSON 文件 (*.json);;所有文件 (*.*)"
+        )
+        
+        if file_path:
+            try:
+                import json
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    imported_config = json.load(f)
+                
+                # 验证配置文件格式
+                if not isinstance(imported_config, dict):
+                    raise ValueError("无效的配置文件格式")
+                
+                # 合并配置
+                self.config_manager.merge_config(imported_config)
+                self.config_manager.save()
+                
+                # 刷新代码补全
+                self.spel_completer.refresh_completions()
+                self.rule_editor.refresh_completions()
+                
+                QMessageBox.information(self, "导入成功", "配置文件已成功导入")
+            except Exception as e:
+                QMessageBox.critical(self, "导入失败", f"导入配置文件失败:\n{e}")
+    
+    def _export_config(self):
+        """导出配置文件"""
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "导出配置文件",
+            "config_export.json",
+            "JSON 文件 (*.json);;所有文件 (*.*)"
+        )
+        
+        if file_path:
+            try:
+                import json
+                config_data = self.config_manager.get_export_config()
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    json.dump(config_data, f, indent=4, ensure_ascii=False)
+                
+                QMessageBox.information(self, "导出成功", f"配置文件已导出到:\n{file_path}")
+            except Exception as e:
+                QMessageBox.critical(self, "导出失败", f"导出配置文件失败:\n{e}")
     
     def _on_file_modified(self):
         """文件修改处理"""
