@@ -111,12 +111,6 @@ class MainWindow(QMainWindow):
         
         file_menu.addSeparator()
         
-        version_action = QAction("修改版本号(&V)...", self)
-        version_action.triggered.connect(self._edit_version)
-        file_menu.addAction(version_action)
-        
-        file_menu.addSeparator()
-        
         exit_action = QAction("退出(&X)", self)
         exit_action.setShortcut(QKeySequence.StandardKey.Quit)
         exit_action.triggered.connect(self.close)
@@ -421,17 +415,6 @@ class MainWindow(QMainWindow):
             
             if self.rule_editor.export_file(file_path):
                 QMessageBox.information(self, "导出成功", f"文件已导出到:\n{file_path}")
-    
-    def _edit_version(self):
-        """编辑版本号"""
-        current_version = self.rule_editor.get_version()
-        dialog = VersionDialog(current_version, self)
-        
-        if dialog.exec():
-            new_version = dialog.get_version()
-            self.rule_editor.set_version(new_version)
-            self._update_title()
-            self._update_status()
     
     def _create_backup(self):
         """创建备份"""

@@ -344,12 +344,25 @@ class RuleEditor(QWidget):
         list_layout.setContentsMargins(16, 16, 8, 16)
         list_layout.setSpacing(12)
         
-        # 列表标题和操作按钮
+        # 列表标题、版本号和操作按钮
         list_header = QHBoxLayout()
         list_title = QLabel("规则列表")
         list_title.setProperty("heading", True)
         list_title.setFont(QFont("Microsoft YaHei UI", 14, QFont.Weight.Bold))
         list_header.addWidget(list_title)
+        
+        # 版本号编辑区域
+        version_label = QLabel("版本:")
+        version_label.setStyleSheet("color: #666666; font-size: 9pt;")
+        list_header.addWidget(version_label)
+        
+        self.version_edit = QLineEdit()
+        self.version_edit.setPlaceholderText("1")
+        self.version_edit.setFixedWidth(50)
+        self.version_edit.setText("1")
+        self.version_edit.textChanged.connect(self._on_version_changed)
+        list_header.addWidget(self.version_edit)
+        
         list_header.addStretch()
         
         # 添加规则按钮
@@ -400,6 +413,7 @@ class RuleEditor(QWidget):
         self._rule_file = RuleFile()
         self._is_modified = False
         self._refresh_list()
+        self._update_version_display()
         self.edit_panel.clear()
         return self._rule_file
     
@@ -412,6 +426,7 @@ class RuleEditor(QWidget):
             self._rule_file = RuleFile.from_dict(data, file_path)
             self._is_modified = False
             self._refresh_list()
+            self._update_version_display()
             
             # 选中第一条规则
             if self._rule_file.rules:
@@ -467,6 +482,29 @@ class RuleEditor(QWidget):
         if self._rule_file:
             self._rule_file.version = version
             self._set_modified()
+    
+    def _on_version_changed(self, text: str):
+        """版本号变化处理"""
+        if not self._rule_file:
+            return
+        try:
+            version = int(text) if text else 1
+            if version != self._rule_file.version:
+                self._rule_file.version = version
+                self._set_modified()
+        except ValueError:
+            pass
+    
+    def _update_version_display(self):
+        """更新版本号显示"""
+        if self._rule_file:
+            self.version_edit.blockSignals(True)
+            self.version_edit.setText(str(self._rule_file.version))
+            self.version_edit.blockSignals(False)
+        else:
+            self.version_edit.blockSignals(True)
+            self.version_edit.setText("1")
+            self.version_edit.blockSignals(False)
     
     def _refresh_list(self):
         """刷新规则列表"""
