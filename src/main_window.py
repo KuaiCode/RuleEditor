@@ -39,6 +39,7 @@ class MainWindow(QMainWindow):
         self.spel_completer = SpelCompleter(config_manager)
         
         self._current_file: Optional[str] = None
+        self._update_checker = None
         self._setup_ui()
         self._setup_menus()
         self._setup_toolbar()
@@ -53,6 +54,9 @@ class MainWindow(QMainWindow):
         last_file = self.config_manager.get('last_opened_file', '')
         if last_file and os.path.exists(last_file):
             QTimer.singleShot(100, lambda: self._open_file(last_file))
+        
+        # 启动时自动检查更新（延迟2秒，等界面加载完成）
+        QTimer.singleShot(2000, self._auto_check_update)
     
     def _setup_ui(self):
         """设置UI"""
@@ -492,13 +496,26 @@ class MainWindow(QMainWindow):
         )
     
     def _check_update(self):
-        """检查更新"""
+        """检查更新（手动触发）"""
         self.statusBar().showMessage("正在检查更新...")
         
         self._update_checker = UpdateChecker(self)
         self._update_checker.update_available.connect(self._on_update_available)
         self._update_checker.check_finished.connect(self._on_check_finished)
         self._update_checker.start()
+    
+    def _auto_check_update(self):
+        """自动检查更新（静默模式，只在有更新时提示）"""
+        self._update_checker = UpdateChecker(self)
+        self._update_checker.update_available.connect(self._on_update_available)
+        self._update_checker.check_finished.connect(self._on_auto_check_finished)
+        self._update_checker.start()
+    
+    def _on_auto_check_finished(self, has_update: bool, message: str):
+        """自动检查更新完成（静默模式，不显示无更新提示）"""
+        if has_update:
+            self.statusBar().showMessage(message, 5000)
+        # 无更新时不显示任何提示
     
     def _on_update_available(self, latest_version: str, release_url: str):
         """发现新版本"""
