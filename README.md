@@ -25,17 +25,24 @@
 ## 系统要求
 
 - Windows 10/11
-- Python 3.8 或更高版本
+- Python 3.8 或更高版本（仅源码运行需要）
 
-## 安装步骤
+## 安装与运行
 
-### 方式一：使用安装脚本（推荐）
+### 方式一：直接下载可执行文件（推荐）
+
+1. 前往 [Releases](../../releases) 页面
+2. 下载最新版本的 `RuleEditor_vX.X.exe`
+3. 双击运行即可，无需安装 Python 环境
+
+### 方式二：使用安装脚本运行源码
 
 1. 确保已安装 Python 3.8+
 2. 双击运行 `install.bat`
 3. 等待安装完成
+4. 双击 `start.bat` 启动应用
 
-### 方式二：手动安装
+### 方式三：手动安装运行源码
 
 ```bash
 # 创建虚拟环境
@@ -46,17 +53,6 @@ venv\Scripts\activate
 
 # 安装依赖
 pip install -r requirements.txt
-```
-
-## 启动应用
-
-双击 `start.bat` 即可启动应用程序。
-
-或者使用命令行：
-
-```bash
-# 激活虚拟环境
-venv\Scripts\activate
 
 # 运行程序
 python main.py
