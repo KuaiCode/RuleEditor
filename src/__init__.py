@@ -2,6 +2,7 @@
 """
 规则编辑器 - 包初始化
 """
+from .version import __version__
 from .models import Rule, RuleFile, Severity, JavaClass, SpringBootProject
 from .config_manager import ConfigManager
 from .theme_manager import ThemeManager, setup_app_style
@@ -11,7 +12,6 @@ from .backup_manager import BackupManager
 from .rule_editor import RuleEditor
 from .main_window import MainWindow, create_main_window
 
-__version__ = "1.2"
 __all__ = [
     'Rule', 'RuleFile', 'Severity', 'JavaClass', 'SpringBootProject',
     'ConfigManager', 'ThemeManager', 'setup_app_style',

@@ -9,7 +9,7 @@ from urllib.request import urlopen, Request
 from urllib.error import URLError
 from PyQt6.QtCore import QThread, pyqtSignal
 
-from . import __version__ as APP_VERSION
+from .version import __version__ as APP_VERSION
 
 # GitHub 仓库信息 (请根据实际情况修改)
 GITHUB_OWNER = "KuaiCode"
