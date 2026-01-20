@@ -4,8 +4,19 @@
 """
 import json
 import os
+import sys
 from typing import Dict, Any, List, Optional
 from pathlib import Path
+
+
+def get_app_dir() -> Path:
+    """获取应用程序目录（兼容打包和开发环境）"""
+    if getattr(sys, 'frozen', False):
+        # PyInstaller 打包后，使用 exe 所在目录
+        return Path(sys.executable).parent
+    else:
+        # 开发环境，使用源码目录
+        return Path(__file__).parent.parent
 
 
 class ConfigManager:
@@ -35,7 +46,7 @@ class ConfigManager:
     def __init__(self, config_dir: str = None):
         if config_dir is None:
             # 默认配置目录在应用程序同级的config文件夹
-            self.config_dir = Path(__file__).parent.parent / "config"
+            self.config_dir = get_app_dir() / "config"
         else:
             self.config_dir = Path(config_dir)
         

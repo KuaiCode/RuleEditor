@@ -621,9 +621,8 @@ class MainWindow(QMainWindow):
 
 def create_main_window() -> MainWindow:
     """创建主窗口"""
-    # 创建配置管理器
-    app_dir = Path(__file__).parent.parent
-    config_manager = ConfigManager(str(app_dir / "config"))
+    # 创建配置管理器（不传参数，让它自动检测正确的目录）
+    config_manager = ConfigManager()
     
     # 设置主题
     theme_manager = setup_app_style(QApplication.instance(), config_manager)
