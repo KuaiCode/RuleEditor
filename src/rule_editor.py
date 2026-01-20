@@ -444,8 +444,23 @@ class RuleEditor(QWidget):
         
         try:
             data = self._rule_file.to_dict()
+            
+            # 自定义 Dumper，让表达式和消息字段使用单引号
+            class QuotedDumper(yaml.SafeDumper):
+                pass
+            
+            def quoted_str_representer(dumper, data):
+                # 默认使用普通样式
+                style = None
+                # 如果包含特殊字符，使用单引号
+                if any(c in data for c in '#:{}[]&*?|<>=!%@`'):
+                    style = "'"
+                return dumper.represent_scalar('tag:yaml.org,2002:str', data, style=style)
+            
+            QuotedDumper.add_representer(str, quoted_str_representer)
+            
             with open(self._rule_file.file_path, 'w', encoding='utf-8') as f:
-                yaml.dump(data, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+                yaml.dump(data, f, Dumper=QuotedDumper, allow_unicode=True, default_flow_style=False, sort_keys=False)
             
             self._is_modified = False
             return True
