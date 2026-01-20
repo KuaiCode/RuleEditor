@@ -14,7 +14,7 @@ from PyQt6.QtCore import QThread, pyqtSignal
 APP_VERSION = "1.1"
 
 # GitHub 仓库信息 (请根据实际情况修改)
-GITHUB_OWNER = "your-username"
+GITHUB_OWNER = "KuaiCode"
 GITHUB_REPO = "RuleEditor"
 
 
