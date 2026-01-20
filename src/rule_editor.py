@@ -175,6 +175,12 @@ class RuleEditPanel(QWidget):
         self.name_edit.textChanged.connect(self._on_field_changed)
         basic_layout.addRow("规则名称:", self.name_edit)
         
+        # 规则注释
+        self.comment_edit = QLineEdit()
+        self.comment_edit.setPlaceholderText("规则的详细说明（可选）")
+        self.comment_edit.textChanged.connect(self._on_field_changed)
+        basic_layout.addRow("注释:", self.comment_edit)
+        
         # 启用状态
         status_layout = QHBoxLayout()
         self.enabled_check = QCheckBox("启用此规则")
@@ -251,6 +257,7 @@ class RuleEditPanel(QWidget):
         # 暂时断开信号
         self.code_edit.blockSignals(True)
         self.name_edit.blockSignals(True)
+        self.comment_edit.blockSignals(True)
         self.enabled_check.blockSignals(True)
         self.severity_combo.blockSignals(True)
         self.expression_edit.blockSignals(True)
@@ -259,6 +266,7 @@ class RuleEditPanel(QWidget):
         # 加载数据
         self.code_edit.setText(rule.code)
         self.name_edit.setText(rule.name)
+        self.comment_edit.setText(rule.comment)
         self.enabled_check.setChecked(rule.enabled)
         
         # 设置严重程度
@@ -273,6 +281,7 @@ class RuleEditPanel(QWidget):
         # 恢复信号
         self.code_edit.blockSignals(False)
         self.name_edit.blockSignals(False)
+        self.comment_edit.blockSignals(False)
         self.enabled_check.blockSignals(False)
         self.severity_combo.blockSignals(False)
         self.expression_edit.blockSignals(False)
@@ -285,6 +294,7 @@ class RuleEditPanel(QWidget):
         
         self._current_rule.code = self.code_edit.text().strip()
         self._current_rule.name = self.name_edit.text().strip()
+        self._current_rule.comment = self.comment_edit.text().strip()
         self._current_rule.enabled = self.enabled_check.isChecked()
         self._current_rule.severity = self.severity_combo.currentData()
         self._current_rule.set_expression(self.expression_edit.toPlainText())
@@ -299,6 +309,7 @@ class RuleEditPanel(QWidget):
         
         self.code_edit.clear()
         self.name_edit.clear()
+        self.comment_edit.clear()
         self.enabled_check.setChecked(True)
         self.severity_combo.setCurrentIndex(1)  # MEDIUM
         self.expression_edit.clear()

@@ -29,6 +29,7 @@ class Rule:
     name: str = ""
     enabled: bool = True
     severity: Severity = Severity.MEDIUM
+    comment: str = ""  # 规则注释/说明
     expression: str = ""
     message: str = ""
     
@@ -45,13 +46,13 @@ class Rule:
             'severity': self.severity.value
         }
         
-        # 根据实际使用的字段名输出
-        if self.condition_expression:
-            result['conditionExpression'] = self.condition_expression
-            result['messageTemplate'] = self.message_template or self.message
-        else:
-            result['expression'] = self.expression or self.condition_expression
-            result['message'] = self.message or self.message_template
+        # 添加注释（如果有）
+        if self.comment:
+            result['comment'] = self.comment
+        
+        # 统一使用 conditionExpression 和 messageTemplate 字段名
+        result['conditionExpression'] = self.get_expression()
+        result['messageTemplate'] = self.get_message()
             
         return result
     
@@ -63,8 +64,9 @@ class Rule:
         rule.name = data.get('name', '')
         rule.enabled = data.get('enabled', True)
         rule.severity = Severity.from_string(data.get('severity', 'MEDIUM'))
+        rule.comment = data.get('comment', '')
         
-        # 处理不同的字段名
+        # 处理不同的字段名（兼容旧格式）
         rule.expression = data.get('expression', '')
         rule.condition_expression = data.get('conditionExpression', '')
         rule.message = data.get('message', '')
