@@ -3,6 +3,8 @@
 规则编辑器组件
 """
 import yaml
+from ruamel.yaml import YAML
+from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from typing import Optional, List, Dict, Any
 from pathlib import Path
 from PyQt6.QtWidgets import (
@@ -320,6 +322,7 @@ class RuleEditor(QWidget):
         self.spel_completer = SpelCompleter(config_manager)
         self._rule_file: Optional[RuleFile] = None
         self._is_modified = False
+        self._original_yaml_data = None
         self._setup_ui()
     
     def _setup_ui(self):
@@ -404,6 +407,7 @@ class RuleEditor(QWidget):
         """创建新规则文件"""
         self._rule_file = RuleFile()
         self._is_modified = False
+        self._original_yaml_data = None  # 新文件没有原始数据
         self._refresh_list()
         self._update_version_display()
         self.edit_panel.clear()
@@ -414,6 +418,12 @@ class RuleEditor(QWidget):
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 data = yaml.safe_load(f)
+            
+            # 同时保存原始 YAML 结构以保持格式
+            ryaml = YAML()
+            ryaml.preserve_quotes = True
+            with open(file_path, 'r', encoding='utf-8') as f:
+                self._original_yaml_data = ryaml.load(f)
             
             self._rule_file = RuleFile.from_dict(data, file_path)
             self._is_modified = False
@@ -432,7 +442,7 @@ class RuleEditor(QWidget):
             return False
     
     def save_file(self, file_path: str = None) -> bool:
-        """保存规则文件"""
+        """保存规则文件，保留原有格式"""
         if not self._rule_file:
             return False
         
@@ -443,24 +453,87 @@ class RuleEditor(QWidget):
             return False
         
         try:
-            data = self._rule_file.to_dict()
+            from ruamel.yaml.scalarstring import SingleQuotedScalarString, DoubleQuotedScalarString
             
-            # 自定义 Dumper，让表达式和消息字段使用单引号
-            class QuotedDumper(yaml.SafeDumper):
-                pass
+            # 使用 ruamel.yaml 保留格式
+            ryaml = YAML()
+            ryaml.preserve_quotes = True
+            ryaml.default_flow_style = False
+            ryaml.width = 4096  # 避免自动换行
+            # 设置缩进：mapping=2, sequence=4, offset=2 使得列表项内容与 - 对齐
+            ryaml.indent(mapping=2, sequence=4, offset=2)
             
-            def quoted_str_representer(dumper, data):
-                # 默认使用普通样式
-                style = None
+            def make_quoted_string(value, original_value=None):
+                """根据原始值或内容决定引号样式"""
+                if not isinstance(value, str):
+                    return value
+                # 如果原始值有引号样式，保留它
+                if original_value is not None:
+                    if isinstance(original_value, SingleQuotedScalarString):
+                        return SingleQuotedScalarString(value)
+                    elif isinstance(original_value, DoubleQuotedScalarString):
+                        return DoubleQuotedScalarString(value)
                 # 如果包含特殊字符，使用单引号
-                if any(c in data for c in '#:{}[]&*?|<>=!%@`'):
-                    style = "'"
-                return dumper.represent_scalar('tag:yaml.org,2002:str', data, style=style)
+                if any(c in value for c in '#{}[]&*?|<>=!%@`') or value.startswith('"'):
+                    return SingleQuotedScalarString(value)
+                return value
             
-            QuotedDumper.add_representer(str, quoted_str_representer)
+            # 如果有原始数据，在其基础上更新
+            if hasattr(self, '_original_yaml_data') and self._original_yaml_data is not None:
+                yaml_data = self._original_yaml_data
+                yaml_data['version'] = self._rule_file.version
+                
+                # 获取现有规则的 code 列表和对应索引
+                existing_rules = yaml_data.get('rules', CommentedSeq())
+                existing_codes = {r.get('code'): i for i, r in enumerate(existing_rules)}
+                
+                # 创建新的规则列表
+                new_rules = CommentedSeq()
+                
+                for idx, rule in enumerate(self._rule_file.rules):
+                    rule_dict = rule.to_dict()
+                    
+                    if rule.code in existing_codes:
+                        # 更新现有规则，保持原有结构
+                        old_idx = existing_codes[rule.code]
+                        old_rule = existing_rules[old_idx]
+                        
+                        # 更新字段值，保留原有引号样式
+                        for key, value in rule_dict.items():
+                            original_value = old_rule.get(key)
+                            old_rule[key] = make_quoted_string(value, original_value)
+                        
+                        # 删除不再存在的字段
+                        keys_to_delete = [k for k in old_rule.keys() if k not in rule_dict]
+                        for k in keys_to_delete:
+                            del old_rule[k]
+                        
+                        new_rules.append(old_rule)
+                    else:
+                        # 新规则，创建 CommentedMap
+                        new_rule = CommentedMap()
+                        for key, value in rule_dict.items():
+                            new_rule[key] = make_quoted_string(value)
+                        new_rules.append(new_rule)
+                        # 在新规则前添加空行
+                        if len(new_rules) > 1:
+                            new_rules.yaml_set_comment_before_after_key(len(new_rules) - 1, before='\n')
+                
+                yaml_data['rules'] = new_rules
+            else:
+                # 没有原始数据，创建新的
+                yaml_data = CommentedMap()
+                yaml_data['version'] = self._rule_file.version
+                yaml_data['rules'] = CommentedSeq()
+                for rule in self._rule_file.rules:
+                    rule_dict = rule.to_dict()
+                    new_rule = CommentedMap()
+                    for key, value in rule_dict.items():
+                        new_rule[key] = make_quoted_string(value)
+                    yaml_data['rules'].append(new_rule)
             
             with open(self._rule_file.file_path, 'w', encoding='utf-8') as f:
-                yaml.dump(data, f, Dumper=QuotedDumper, allow_unicode=True, default_flow_style=False, sort_keys=False)
+                ryaml.dump(yaml_data, f)
             
             self._is_modified = False
             return True
