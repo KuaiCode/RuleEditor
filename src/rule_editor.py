@@ -477,7 +477,7 @@ class RuleEditor(QWidget):
             # 设置缩进：mapping=2, sequence=4, offset=2 使得列表项内容与 - 对齐
             ryaml.indent(mapping=2, sequence=4, offset=2)
             
-            def make_quoted_string(value, original_value=None):
+            def make_quoted_string(value, original_value=None, field_name=None):
                 """根据原始值或内容决定引号样式"""
                 if not isinstance(value, str):
                     return value
@@ -487,6 +487,9 @@ class RuleEditor(QWidget):
                         return SingleQuotedScalarString(value)
                     elif isinstance(original_value, DoubleQuotedScalarString):
                         return DoubleQuotedScalarString(value)
+                # 对于 conditionExpression 和 messageTemplate，默认使用单引号
+                if field_name in ('conditionExpression', 'messageTemplate'):
+                    return SingleQuotedScalarString(value)
                 # 如果包含特殊字符，使用单引号
                 if any(c in value for c in '#{}[]&*?|<>=!%@`') or value.startswith('"'):
                     return SingleQuotedScalarString(value)
@@ -515,7 +518,7 @@ class RuleEditor(QWidget):
                         # 更新字段值，保留原有引号样式
                         for key, value in rule_dict.items():
                             original_value = old_rule.get(key)
-                            old_rule[key] = make_quoted_string(value, original_value)
+                            old_rule[key] = make_quoted_string(value, original_value, key)
                         
                         # 删除不再存在的字段
                         keys_to_delete = [k for k in old_rule.keys() if k not in rule_dict]
@@ -527,11 +530,8 @@ class RuleEditor(QWidget):
                         # 新规则，创建 CommentedMap
                         new_rule = CommentedMap()
                         for key, value in rule_dict.items():
-                            new_rule[key] = make_quoted_string(value)
+                            new_rule[key] = make_quoted_string(value, None, key)
                         new_rules.append(new_rule)
-                        # 在新规则前添加空行
-                        if len(new_rules) > 1:
-                            new_rules.yaml_set_comment_before_after_key(len(new_rules) - 1, before='\n')
                 
                 yaml_data['rules'] = new_rules
             else:
@@ -543,11 +543,33 @@ class RuleEditor(QWidget):
                     rule_dict = rule.to_dict()
                     new_rule = CommentedMap()
                     for key, value in rule_dict.items():
-                        new_rule[key] = make_quoted_string(value)
+                        new_rule[key] = make_quoted_string(value, None, key)
                     yaml_data['rules'].append(new_rule)
             
             with open(self._rule_file.file_path, 'w', encoding='utf-8') as f:
                 ryaml.dump(yaml_data, f)
+            
+            # 在规则之间添加空行（除了第一条）
+            with open(self._rule_file.file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            # 在每个 "  - code:" 前添加空行（但不包括第一个）
+            lines = content.split('\n')
+            result_lines = []
+            first_rule = True
+            
+            for i, line in enumerate(lines):
+                # 检测规则开始行（两个空格 + "- code:"）
+                if line.startswith('  - code:'):
+                    if not first_rule:
+                        # 不是第一条规则，在前面添加空行（如果前一行不是空行）
+                        if result_lines and result_lines[-1].strip():
+                            result_lines.append('')
+                    first_rule = False
+                result_lines.append(line)
+            
+            with open(self._rule_file.file_path, 'w', encoding='utf-8') as f:
+                f.write('\n'.join(result_lines))
             
             self._is_modified = False
             return True
