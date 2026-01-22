@@ -199,9 +199,11 @@ class SpelCompleter:
         
         current_word = text[word_start:cursor_pos]
         
-        # 检查是否在输入#fn.之后
-        if text_before.rstrip().endswith('#fn.'):
-            # 返回函数类的方法
+        # 检查是否在输入#fn.之后的方法名
+        if current_word.startswith('#fn.'):
+            # 提取方法名前缀
+            method_prefix = current_word[4:]  # 去掉 '#fn.'
+            # 返回函数类的方法，并过滤
             if self.config_manager:
                 fn_methods = []
                 for cls in self.config_manager.get_function_classes():
@@ -209,8 +211,12 @@ class SpelCompleter:
                         method_name = method.get('name', '')
                         params = method.get('params', [])
                         params_str = ', '.join(params) if params else ''
-                        fn_methods.append(f"{method_name}({params_str})")
+                        full_method = f"{method_name}({params_str})"
+                        # 过滤：方法名以输入的前缀开头
+                        if not method_prefix or method_name.lower().startswith(method_prefix.lower()):
+                            fn_methods.append(full_method)
                 return fn_methods
+            return []
         
         # 检查是否在输入点之后（对象属性/方法访问）
         if '.' in current_word:
